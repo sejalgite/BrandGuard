@@ -679,3 +679,279 @@ export async function getDocumentAnalysisSummary(
   );
   return response.data;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6: Human Review, Approval & Governance Types & APIs
+// ---------------------------------------------------------------------------
+
+export type ReviewWorkflowStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "CHANGES_REQUESTED"
+  | "RESUBMITTED"
+  | "PENDING_BRAND_APPROVAL"
+  | "PENDING_LEGAL_APPROVAL"
+  | "APPROVED"
+  | "REJECTED"
+  | "WITHDRAWN";
+
+export type FindingDecisionType = "ACCEPTED" | "DISMISSED" | "DISPUTED" | "RESOLVED";
+
+export interface ReviewHistoryItem {
+  id: string;
+  review_id: string;
+  from_status?: string;
+  to_status: string;
+  action: string;
+  actor_id: string;
+  actor_name?: string;
+  actor_role?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface FindingDecisionItem {
+  id: string;
+  finding_id: string;
+  review_id: string;
+  decision: FindingDecisionType;
+  decided_by_id: string;
+  decided_by_name?: string;
+  reason?: string;
+  suggested_correction?: string;
+  created_at: string;
+}
+
+export interface ReviewCommentItem {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  version_id: string;
+  review_id: string;
+  finding_id?: string;
+  user_id: string;
+  user_name?: string;
+  user_role?: string;
+  parent_comment_id?: string;
+  content: string;
+  created_at: string;
+  replies: ReviewCommentItem[];
+}
+
+export interface ReviewItem {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  version_id: string;
+  document_title?: string;
+  version_number?: number;
+  brand_health_score?: number;
+  creator_id: string;
+  creator_name?: string;
+  creator_email?: string;
+  assigned_reviewer_id?: string;
+  reviewer_name?: string;
+  reviewer_email?: string;
+  legal_reviewer_id?: string;
+  legal_reviewer_name?: string;
+  status: ReviewWorkflowStatus;
+  priority: string;
+  due_date?: string;
+  legal_review_required: boolean;
+  legal_status: string;
+  submission_notes?: string;
+  final_decision_notes?: string;
+  final_decision_by?: string;
+  created_at: string;
+  updated_at: string;
+  history?: ReviewHistoryItem[];
+  finding_decisions?: FindingDecisionItem[];
+}
+
+export interface ReviewQueueStats {
+  total: number;
+  submitted: number;
+  under_review: number;
+  changes_requested: number;
+  pending_approval: number;
+  approved: number;
+  rejected: number;
+  assigned_to_current_user: number;
+}
+
+export interface VersionDiffTextSummary {
+  v1_lines_count: number;
+  v2_lines_count: number;
+  added_lines_count: number;
+  removed_lines_count: number;
+  modified_lines_count: number;
+}
+
+export interface TextDiffLine {
+  type: "SAME" | "ADD" | "REMOVE";
+  text: string;
+  line_number_v1?: number;
+  line_number_v2?: number;
+}
+
+export interface VersionDiffFindingsSummary {
+  v1_total_findings: number;
+  v2_total_findings: number;
+  resolved_findings_count: number;
+  new_findings_count: number;
+  persistent_findings_count: number;
+  resolved_findings: any[];
+  new_findings: any[];
+}
+
+export interface DocumentVersionComparison {
+  document_id: string;
+  v1_id: string;
+  v2_id: string;
+  v1_version_number: number;
+  v2_version_number: number;
+  v1_score?: number;
+  v2_score?: number;
+  score_delta?: number;
+  text_summary: VersionDiffTextSummary;
+  diff_lines: TextDiffLine[];
+  findings_summary: VersionDiffFindingsSummary;
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  notification_type: string;
+  reference_entity?: string;
+  reference_id?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export async function listReviews(filters?: {
+  status?: string;
+  priority?: string;
+  assigned_to_me?: boolean;
+}): Promise<ReviewItem[]> {
+  const response = await apiClient.get<ReviewItem[]>("/reviews", { params: filters });
+  return response.data;
+}
+
+export async function getReviewQueueStats(): Promise<ReviewQueueStats> {
+  const response = await apiClient.get<ReviewQueueStats>("/reviews/queue/stats");
+  return response.data;
+}
+
+export async function getReviewDetail(review_id: string): Promise<ReviewItem> {
+  const response = await apiClient.get<ReviewItem>(`/reviews/${review_id}`);
+  return response.data;
+}
+
+export async function createReview(data: {
+  document_id: string;
+  version_id?: string;
+  priority?: string;
+  assigned_reviewer_id?: string;
+  legal_reviewer_id?: string;
+  legal_review_required?: boolean;
+  due_date?: string;
+  submission_notes?: string;
+}): Promise<ReviewItem> {
+  const response = await apiClient.post<ReviewItem>("/reviews", data);
+  return response.data;
+}
+
+export async function transitionReview(
+  review_id: string,
+  data: {
+    action: string;
+    notes?: string;
+    new_version_id?: string;
+  }
+): Promise<ReviewItem> {
+  const response = await apiClient.post<ReviewItem>(`/reviews/${review_id}/transition`, data);
+  return response.data;
+}
+
+export async function assignReviewers(
+  review_id: string,
+  data: {
+    assigned_reviewer_id?: string;
+    legal_reviewer_id?: string;
+    due_date?: string;
+  }
+): Promise<ReviewItem> {
+  const response = await apiClient.patch<ReviewItem>(`/reviews/${review_id}/assign`, data);
+  return response.data;
+}
+
+export async function recordFindingDecision(
+  review_id: string,
+  finding_id: string,
+  data: {
+    decision: FindingDecisionType;
+    reason?: string;
+    suggested_correction?: string;
+  }
+): Promise<FindingDecisionItem> {
+  const response = await apiClient.post<FindingDecisionItem>(
+    `/reviews/${review_id}/findings/${finding_id}/decision`,
+    data
+  );
+  return response.data;
+}
+
+export async function listReviewComments(review_id: string): Promise<ReviewCommentItem[]> {
+  const response = await apiClient.get<ReviewCommentItem[]>(`/reviews/${review_id}/comments`);
+  return response.data;
+}
+
+export async function addReviewComment(
+  review_id: string,
+  data: {
+    content: string;
+    finding_id?: string;
+    parent_comment_id?: string;
+  }
+): Promise<ReviewCommentItem> {
+  const response = await apiClient.post<ReviewCommentItem>(
+    `/reviews/${review_id}/comments`,
+    data
+  );
+  return response.data;
+}
+
+export async function compareDocumentVersions(
+  document_id: string,
+  v1_id: string,
+  v2_id: string
+): Promise<DocumentVersionComparison> {
+  const response = await apiClient.get<DocumentVersionComparison>(
+    `/reviews/documents/${document_id}/compare`,
+    { params: { v1: v1_id, v2: v2_id } }
+  );
+  return response.data;
+}
+
+export async function listNotifications(unread_only = false): Promise<NotificationItem[]> {
+  const response = await apiClient.get<NotificationItem[]>("/notifications", {
+    params: { unread_only },
+  });
+  return response.data;
+}
+
+export async function markNotificationRead(notification_id: string): Promise<NotificationItem> {
+  const response = await apiClient.patch<NotificationItem>(
+    `/notifications/${notification_id}/read`
+  );
+  return response.data;
+}
+
+export async function markAllNotificationsRead(): Promise<{ marked_read_count: number }> {
+  const response = await apiClient.post<{ marked_read_count: number }>(
+    "/notifications/read-all"
+  );
+  return response.data;
+}

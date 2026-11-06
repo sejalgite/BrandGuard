@@ -62,7 +62,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { label: "Document Ingestion", href: "/documents", icon: UploadCloud, badge: "Active", requiredPermission: "upload_docs" },
         { label: "Brand Analysis", href: "/analysis", icon: ShieldAlert, badge: "Active", requiredPermission: "run_analysis" },
-        { label: "Review & Approvals", href: "#", icon: CheckCircle2, badge: "Phase 7", requiredPermission: "approve_docs" },
+        { label: "Review & Approvals", href: "/reviews", icon: CheckCircle2, badge: "Active", requiredPermission: "run_analysis" },
       ],
     },
     {

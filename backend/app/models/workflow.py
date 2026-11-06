@@ -48,6 +48,7 @@ class Comment(Base):
     organization_id = Column(UUID(as_uuid=True), nullable=False)
     document_id = Column(UUID(as_uuid=True), nullable=False)
     version_id = Column(UUID(as_uuid=True), nullable=False)
+    review_id = Column(UUID(as_uuid=True), nullable=True)
     finding_id = Column(UUID(as_uuid=True))
     user_id = Column(UUID(as_uuid=True), nullable=False)
     parent_comment_id = Column(UUID(as_uuid=True))

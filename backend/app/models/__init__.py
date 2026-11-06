@@ -13,6 +13,10 @@ from app.models.finding import (
     DetectionCategory, SeverityLevel, FindingStatus, FindingSource, EvidenceEntityType
 )
 from app.models.workflow import ReviewAssignment, Comment
+from app.models.review import (
+    Review, ReviewStatus, ReviewHistory, FindingDecision, FindingDecisionType
+)
+from app.models.notification import Notification
 from app.models.audit import AuditLog, AIDisclosureLog
 from app.models.token import RevokedToken
 
@@ -43,6 +47,12 @@ __all__ = [
     "EvidenceEntityType",
     "ReviewAssignment",
     "Comment",
+    "Review",
+    "ReviewStatus",
+    "ReviewHistory",
+    "FindingDecision",
+    "FindingDecisionType",
+    "Notification",
     "AuditLog",
     "AIDisclosureLog",
     "RevokedToken",
