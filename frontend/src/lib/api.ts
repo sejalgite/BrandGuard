@@ -388,3 +388,161 @@ export async function uploadAssetFile(formData: FormData): Promise<BrandAssetIte
   });
   return response.data;
 }
+
+// ---------------------------------------------------------------------------
+// Document Ingestion & Extraction API (Phase 4)
+// ---------------------------------------------------------------------------
+
+export interface TextSegment {
+  segment_id: string;
+  page_number: number;
+  paragraph_index: number;
+  sentence_index: number;
+  text: string;
+  char_start: number;
+  char_end: number;
+  heading_context?: string;
+}
+
+export interface StructuredContent {
+  title?: string;
+  total_segments: number;
+  total_paragraphs: number;
+  total_pages: number;
+  headings: Array<{ text: string; level: number; page: number }>;
+  paragraphs: Array<{
+    paragraph_index: number;
+    page_number: number;
+    text: string;
+    heading_context?: string;
+    char_start: number;
+    char_end: number;
+  }>;
+  segments: TextSegment[];
+  word_count: number;
+  character_count: number;
+}
+
+export interface DocumentVersionItem {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  version_number: number;
+  original_filename?: string;
+  file_size_bytes?: number;
+  mime_type?: string;
+  extraction_status: "COMPLETED" | "EMPTY" | "FAILED" | "OCR_UNAVAILABLE" | "PENDING";
+  extracted_text?: string;
+  word_count: number;
+  character_count: number;
+  version_status: string;
+  is_locked: boolean;
+  created_at: string;
+  extraction_metadata?: Record<string, any>;
+  structured_content?: StructuredContent;
+}
+
+export interface DocumentItem {
+  id: string;
+  organization_id: string;
+  creator_id: string;
+  title: string;
+  content_type: "TEXT" | "DOCX" | "PDF" | "IMAGE";
+  lifecycle_status: string;
+  created_at: string;
+  updated_at: string;
+  latest_version?: DocumentVersionItem;
+  versions_count: number;
+}
+
+export interface DocumentUploadResponse {
+  document: DocumentItem;
+  version: DocumentVersionItem;
+  message: string;
+}
+
+export async function listDocuments(params?: {
+  content_type?: string;
+  search?: string;
+}): Promise<DocumentItem[]> {
+  const response = await apiClient.get<DocumentItem[]>("/documents", { params });
+  return response.data;
+}
+
+export async function getDocumentDetails(document_id: string): Promise<DocumentItem> {
+  const response = await apiClient.get<DocumentItem>(`/documents/${document_id}`);
+  return response.data;
+}
+
+export async function listDocumentVersions(document_id: string): Promise<DocumentVersionItem[]> {
+  const response = await apiClient.get<DocumentVersionItem[]>(`/documents/${document_id}/versions`);
+  return response.data;
+}
+
+export async function getVersionDetails(
+  document_id: string,
+  version_id: string
+): Promise<DocumentVersionItem> {
+  const response = await apiClient.get<DocumentVersionItem>(
+    `/documents/${document_id}/versions/${version_id}`
+  );
+  return response.data;
+}
+
+export async function uploadDocument(formData: FormData): Promise<DocumentUploadResponse> {
+  const response = await apiClient.post<DocumentUploadResponse>("/documents/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+export async function uploadNewVersion(
+  document_id: string,
+  formData: FormData
+): Promise<DocumentUploadResponse> {
+  const response = await apiClient.post<DocumentUploadResponse>(
+    `/documents/${document_id}/versions`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  return response.data;
+}
+
+export async function retryExtraction(
+  document_id: string,
+  version_id: string
+): Promise<DocumentVersionItem> {
+  const response = await apiClient.post<DocumentVersionItem>(
+    `/documents/${document_id}/versions/${version_id}/retry`
+  );
+  return response.data;
+}
+
+export async function deleteDocument(document_id: string): Promise<{ message: string }> {
+  const response = await apiClient.delete<{ message: string }>(`/documents/${document_id}`);
+  return response.data;
+}
+
+export async function downloadDocumentFile(
+  document_id: string,
+  version_id: string,
+  filename: string
+): Promise<void> {
+  const response = await apiClient.get(
+    `/documents/${document_id}/versions/${version_id}/download`,
+    {
+      responseType: "blob",
+    }
+  );
+  const blob = new Blob([response.data]);
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || "document.bin";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}

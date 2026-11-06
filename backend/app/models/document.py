@@ -75,6 +75,13 @@ class DocumentVersion(Base):
     approved_at = Column(DateTime(timezone=True))
     approved_by = Column(UUID(as_uuid=True))
     created_at = Column(DateTime(timezone=True), server_default=text("NOW()"))
+    original_filename = Column(String(255))
+    file_size_bytes = Column(Integer)
+    mime_type = Column(String(100))
+    extraction_status = Column(String(50), nullable=False, default="PENDING")
+    extraction_metadata = Column(JSONB)
+    structured_content = Column(JSONB)
+    character_count = Column(Integer, nullable=False, default=0)
 
     __table_args__ = (
         ForeignKeyConstraint(
