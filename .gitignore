@@ -1,0 +1,72 @@
+# BrandGuard – Git Ignore Rules
+
+# Environment secrets
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!*.env.example
+
+# Node / Next.js
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+.cache/
+coverage/
+.turbo/
+
+# Python
+venv/
+.venv/
+env/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Logs
+*.log
+**/*.log
+logs/
+
+# Local databases, binaries, and runtime data
+*.sqlite
+*.db
+postgres_data/
+pgsql/
+pgsql/data/
+
+# Uploads and temporary runtime files
+uploads/
+temp/
+tmp/
+storage/
+backend/storage/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test output
+htmlcov/
+.coverage
+coverage.xml
+junit.xml
