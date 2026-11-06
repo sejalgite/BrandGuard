@@ -955,3 +955,150 @@ export async function markAllNotificationsRead(): Promise<{ marked_read_count: n
   );
   return response.data;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 7: Evaluation, Reliability & Guideline Intelligence Types & APIs
+// ---------------------------------------------------------------------------
+
+export interface EvaluationDatasetItem {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  dataset_type: string;
+  version: string;
+  is_active: boolean;
+  total_cases?: number;
+  created_at: string;
+}
+
+export interface EvaluationTestCaseItem {
+  id: string;
+  test_code: string;
+  title: string;
+  content_type: string;
+  input_content: string;
+  content_metadata: Record<string, unknown>;
+  expected_findings: Array<Record<string, unknown>>;
+  expected_compliant: boolean;
+  is_ambiguous: boolean;
+  target_category?: string;
+  created_at: string;
+}
+
+export interface CategoryMetricDetailItem {
+  tp: number;
+  fp: number;
+  fn: number;
+  precision: number;
+  recall: number;
+  f1: number;
+  coverage: number;
+}
+
+export interface EvaluationRunItem {
+  id: string;
+  dataset_id: string;
+  run_type: string;
+  engine_version: string;
+  overall_precision: number;
+  overall_recall: number;
+  overall_f1: number;
+  overall_accuracy: number;
+  category_metrics: Record<string, CategoryMetricDetailItem>;
+  total_cases: number;
+  passed_cases: number;
+  failed_cases: number;
+  execution_time_seconds: number;
+  created_at: string;
+  case_results?: Array<Record<string, unknown>>;
+}
+
+export interface QualityDashboardData {
+  latest_run?: EvaluationRunItem;
+  total_datasets: number;
+  total_test_cases: number;
+  benchmark_f1_score: number;
+  finding_quality_verification_rate: number;
+  category_performance: Record<string, CategoryMetricDetailItem>;
+  historical_runs: EvaluationRunItem[];
+  active_recommendations_count: number;
+}
+
+export interface RulePerformanceItem {
+  rule_id: string;
+  rule_code: string;
+  category: string;
+  title: string;
+  description: string;
+  ambiguity_score: number;
+  subjective_terms: string[];
+  total_findings_generated: number;
+  total_disputes: number;
+  dispute_rate: number;
+  status: string;
+}
+
+export interface RecommendationItem {
+  id: string;
+  type: string;
+  category: string;
+  rule_id?: string;
+  rule_code?: string;
+  title: string;
+  description: string;
+  proposed_action: string;
+  reason: string;
+  requires_human_approval: boolean;
+}
+
+export async function seedBenchmarkDataset(): Promise<EvaluationDatasetItem> {
+  const response = await apiClient.post<EvaluationDatasetItem>("/evaluation/datasets/seed");
+  return response.data;
+}
+
+export async function listEvaluationDatasets(): Promise<EvaluationDatasetItem[]> {
+  const response = await apiClient.get<EvaluationDatasetItem[]>("/evaluation/datasets");
+  return response.data;
+}
+
+export async function listDatasetTestCases(datasetId: string): Promise<EvaluationTestCaseItem[]> {
+  const response = await apiClient.get<EvaluationTestCaseItem[]>(`/evaluation/datasets/${datasetId}/test-cases`);
+  return response.data;
+}
+
+export async function triggerEvaluationRun(datasetId: string, runType = "BENCHMARK"): Promise<EvaluationRunItem> {
+  const response = await apiClient.post<EvaluationRunItem>("/evaluation/runs", {
+    dataset_id: datasetId,
+    run_type: runType,
+    engine_version: "1.0.0-phase7"
+  });
+  return response.data;
+}
+
+export async function listEvaluationRuns(datasetId?: string): Promise<EvaluationRunItem[]> {
+  const response = await apiClient.get<EvaluationRunItem[]>("/evaluation/runs", {
+    params: datasetId ? { dataset_id: datasetId } : undefined
+  });
+  return response.data;
+}
+
+export async function getEvaluationRunDetail(runId: string): Promise<EvaluationRunItem> {
+  const response = await apiClient.get<EvaluationRunItem>(`/evaluation/runs/${runId}`);
+  return response.data;
+}
+
+export async function getQualityDashboard(): Promise<QualityDashboardData> {
+  const response = await apiClient.get<QualityDashboardData>("/evaluation/dashboard");
+  return response.data;
+}
+
+export async function getRuleClarityAnalytics(): Promise<{ total_rules_analyzed: number; rules: RulePerformanceItem[] }> {
+  const response = await apiClient.get<{ total_rules_analyzed: number; rules: RulePerformanceItem[] }>("/evaluation/intelligence/rules");
+  return response.data;
+}
+
+export async function getGuidelineRecommendations(): Promise<{ total_recommendations: number; recommendations: RecommendationItem[] }> {
+  const response = await apiClient.get<{ total_recommendations: number; recommendations: RecommendationItem[] }>("/evaluation/intelligence/recommendations");
+  return response.data;
+}

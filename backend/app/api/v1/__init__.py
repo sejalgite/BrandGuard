@@ -8,6 +8,7 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.analysis import router as analysis_router
 from app.api.v1.reviews import router as reviews_router
 from app.api.v1.notifications import router as notifications_router
+from app.api.v1.evaluation import router as evaluation_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["Health"])
@@ -19,3 +20,4 @@ api_router.include_router(documents_router, prefix="/documents", tags=["Document
 api_router.include_router(analysis_router, prefix="/analysis", tags=["Brand Analysis"])
 api_router.include_router(reviews_router, prefix="/reviews", tags=["Human Review & Governance"])
 api_router.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
+api_router.include_router(evaluation_router, prefix="/evaluation", tags=["Evaluation & Intelligence"])

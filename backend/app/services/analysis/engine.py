@@ -482,3 +482,124 @@ class BrandAnalysisEngine:
             job.error_message = str(exc)
             self.db.commit()
             raise
+
+    @classmethod
+    def analyze_text(
+        cls,
+        db: Session,
+        organization_id: Any,
+        text: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> List[Finding]:
+        """
+        Direct text analysis engine runner used by benchmark evaluation and testing.
+        Executes all 6 deterministic compliance analyzers against the active Constitution.
+        """
+        org_id_str = str(organization_id)
+        constitution = (
+            db.query(BrandConstitution)
+            .filter(
+                BrandConstitution.organization_id == org_id_str,
+                BrandConstitution.is_active == True
+            )
+            .order_by(desc(BrandConstitution.created_at))
+            .first()
+        )
+        if not constitution:
+            return []
+
+        rules = (
+            db.query(BrandRule)
+            .filter(
+                BrandRule.organization_id == org_id_str,
+                BrandRule.constitution_id == constitution.id,
+                BrandRule.status == EntityStatus.ACTIVE
+            )
+            .all()
+        )
+        facts = (
+            db.query(FactRegistry)
+            .filter(
+                FactRegistry.organization_id == org_id_str,
+                FactRegistry.constitution_id == constitution.id,
+            )
+            .all()
+        )
+        terms = (
+            db.query(TermBank)
+            .filter(
+                TermBank.organization_id == org_id_str,
+                TermBank.constitution_id == constitution.id,
+                TermBank.status == EntityStatus.ACTIVE
+            )
+            .all()
+        )
+        assets = (
+            db.query(BrandAsset)
+            .filter(
+                BrandAsset.organization_id == org_id_str,
+                BrandAsset.constitution_id == constitution.id,
+                BrandAsset.status == EntityStatus.ACTIVE
+            )
+            .all()
+        )
+
+        # Build segments from text paragraphs
+        segments = []
+        paras = [p.strip() for p in text.split("\n\n") if p.strip()]
+        seg_idx = 1
+        curr_offset = 0
+        for p_idx, p in enumerate(paras, 1):
+            p_start = text.find(p, curr_offset)
+            p_start = p_start if p_start >= 0 else curr_offset
+            p_end = p_start + len(p)
+            segments.append({
+                "segment_id": f"seg_{seg_idx}",
+                "paragraph_index": p_idx,
+                "sentence_index": 1,
+                "text": p,
+                "char_start": p_start,
+                "char_end": p_end
+            })
+            curr_offset = p_end
+            seg_idx += 1
+
+        candidates: List[Dict[str, Any]] = []
+        candidates.extend(TerminologyAnalyzer.analyze(segments, text, terms))
+        candidates.extend(ClaimsAnalyzer.analyze(segments, text, facts, rules))
+        candidates.extend(ToneAnalyzer.analyze(segments, text, rules, None))
+        candidates.extend(MessagingAnalyzer.analyze(segments, text, rules, None))
+        candidates.extend(VisualAnalyzer.analyze(segments, text, assets, metadata or {}))
+        candidates.extend(AccessibilityAnalyzer.analyze(segments, text, rules, {}))
+
+        candidates = _deduplicate_cross_category(candidates)
+
+        findings: List[Finding] = []
+        for c in candidates:
+            if not _verify_finding(c, text):
+                continue
+            f = Finding(
+                id=uuid.uuid4(),
+                organization_id=uuid.UUID(org_id_str),
+                constitution_id=constitution.id,
+                category=c["category"],
+                severity=c["severity"],
+                confidence=c.get("confidence", 1.0),
+                flagged_snippet=c["flagged_snippet"],
+                char_offset_start=c.get("char_offset_start"),
+                char_offset_end=c.get("char_offset_end"),
+                explanation=c.get("explanation", ""),
+                suggested_correction=c.get("suggested_correction"),
+                evidence_type=c.get("evidence_type", EvidenceEntityType.RULE),
+                rule_id=c.get("rule_id"),
+                fact_id=c.get("fact_id"),
+                term_id=c.get("term_id"),
+                asset_id=c.get("asset_id"),
+                cited_code=c.get("cited_code"),
+                source=c.get("source", FindingSource.DETERMINISTIC_ENGINE),
+                status=FindingStatus.OPEN,
+                verified_by_gate=True
+            )
+            findings.append(f)
+
+        return findings

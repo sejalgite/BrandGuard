@@ -17,6 +17,7 @@ from app.models.review import (
     Review, ReviewStatus, ReviewHistory, FindingDecision, FindingDecisionType
 )
 from app.models.notification import Notification
+from app.models.evaluation import EvaluationDataset, EvaluationTestCase, EvaluationRun
 from app.models.audit import AuditLog, AIDisclosureLog
 from app.models.token import RevokedToken
 
@@ -53,6 +54,9 @@ __all__ = [
     "FindingDecision",
     "FindingDecisionType",
     "Notification",
+    "EvaluationDataset",
+    "EvaluationTestCase",
+    "EvaluationRun",
     "AuditLog",
     "AIDisclosureLog",
     "RevokedToken",

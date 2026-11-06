@@ -66,11 +66,11 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: "Governance Insights",
+      label: "Governance & Quality",
       requiredPermission: "view_analytics",
       items: [
-        { label: "Governance Analytics", href: "#", icon: BarChart3, badge: "Phase 8", requiredPermission: "view_analytics" },
-        { label: "Guideline Clarity Report", href: "#", icon: Lightbulb, badge: "Phase 8", requiredPermission: "view_analytics" },
+        { label: "Evaluation & Quality", href: "/evaluation", icon: BarChart3, badge: "Active", requiredPermission: "view_analytics" },
+        { label: "Guideline Clarity Report", href: "/evaluation#clarity", icon: Lightbulb, badge: "Active", requiredPermission: "view_analytics" },
       ],
     },
     {

@@ -1,12 +1,13 @@
 # BrandGuard
 
 > **AI-Native Multi-Tenant Brand Governance & Verification Engine**  
-> Current Branch: `feature/phase-6-review-governance`  
+> Current Branch: `feature/phase-7-evaluation-intelligence`  
 > Checkpoints:
 > - Stable Backup: `backup/phase2-phase3-stable` (`f76c436`)
 > - Phase 4 Checkpoint: `c76d11a`
 > - Phase 5 Completion: `c7fadbb`
-> - Phase 6 Completion: Human Review, Approval & Governance Workflow (112 backend tests passing, 0 errors)
+> - Phase 6 Completion: `f545825` (Human Review, Approval & Governance Workflow)
+> - Phase 7 Completion: Evaluation, Reliability & Intelligence (121 backend tests passing, 0 errors, 14 Next.js routes)
 
 ---
 
@@ -21,6 +22,7 @@ This repository contains the complete, tested, and operational implementation of
 - **Phase 4: Content Ingestion & Document Extraction** — High-performance ingestion for TXT, DOCX, multi-page PDF, and raster images (PNG, JPG), structured segmentation (paragraphs, headings, metadata), and graceful OCR fallback.
 - **Phase 5: Brand Analysis Engine** — Multi-category compliance engine across Terminology, Claims & Facts, Tone & Voice, Messaging Alignment, Visual Consistency (Pillow pixel analysis), and WCAG 2.1 Accessibility. Includes finding verification gate, duplicate suppression, and local Ollama support.
 - **Phase 6: Human Review, Approval & Governance Workflow** — Centralized review state machine with self-approval prevention and legal gating, finding-level decision tracking (accept/dismiss/dispute/resolve), threaded collaboration with hierarchical replies, automated version diff engine (line-by-line diff, score delta, resolved violations), immutable document version locking upon approval, and in-app notifications.
+- **Phase 7: Evaluation, Reliability & Intelligence** — Precision and Recall benchmarking across all 6 compliance categories, "No Citation, No Flag" finding verification gate, linguistic guideline ambiguity scoring, review friction analysis, conflicting rule detection, human-in-the-loop recommendations, and dedicated Evaluation Dashboard UI.
 
 ---
 
