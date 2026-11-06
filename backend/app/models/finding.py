@@ -4,7 +4,7 @@ from sqlalchemy import (
     Column, String, Text, Boolean, Integer, Numeric, DateTime, Enum,
     ForeignKeyConstraint, UniqueConstraint, CheckConstraint, text
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -19,6 +19,7 @@ class DetectionCategory(str, enum.Enum):
 
 
 class SeverityLevel(str, enum.Enum):
+    INFO = "INFO"
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
@@ -31,6 +32,7 @@ class FindingStatus(str, enum.Enum):
     EDITED = "EDITED"
     DISPUTED = "DISPUTED"
     DISMISSED = "DISMISSED"
+    NEEDS_REVIEW = "NEEDS_REVIEW"
 
 
 class FindingSource(str, enum.Enum):
@@ -53,6 +55,11 @@ class ReviewJob(Base):
     document_id = Column(UUID(as_uuid=True), nullable=False)
     version_id = Column(UUID(as_uuid=True), nullable=False)
     status = Column(String(50), nullable=False, default="RUNNING")
+    trigger_type = Column(String(50), nullable=False, default="MANUAL")
+    total_findings = Column(Integer, nullable=False, default=0)
+    categories_analyzed = Column(JSONB, nullable=False, default=list)
+    execution_metadata = Column(JSONB, nullable=False, default=dict)
+    error_message = Column(Text)
     started_at = Column(DateTime(timezone=True), server_default=text("NOW()"))
     completed_at = Column(DateTime(timezone=True))
 
@@ -86,6 +93,8 @@ class Finding(Base):
     char_offset_start = Column(Integer)
     char_offset_end = Column(Integer)
     explanation = Column(Text, nullable=False)
+    segment_id = Column(String(100))
+    suggested_correction = Column(Text)
 
     # Typed Evidence References
     evidence_type = Column(Enum(EvidenceEntityType, name="evidence_entity_type"), nullable=False)

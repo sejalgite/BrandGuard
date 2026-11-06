@@ -1,8 +1,11 @@
 # BrandGuard
 
 > **AI-Native Multi-Tenant Brand Governance & Verification Engine**  
-> Checkpoint: **Completed Phase 2 (Authentication & RBAC) and Phase 3 (Constitution Builder)**  
-> Target Branch: `backup/phase2-phase3-stable`
+> Current Branch: `feature/phase-5-brand-analysis`  
+> Checkpoints:
+> - Stable Backup: `backup/phase2-phase3-stable` (`f76c436`)
+> - Phase 4 Checkpoint: `c76d11a`
+> - Phase 5 Completion: Brand Analysis Engine (All 6 Categories + Quality Verified)
 
 ---
 
@@ -10,10 +13,12 @@
 
 BrandGuard is a deterministic, multi-tenant brand governance platform designed to enforce brand guidelines, verify factual marketing claims, govern terminology, and manage brand assets across enterprise organizations.
 
-This repository checkpoint contains the complete, tested, and operational implementation of:
+This repository contains the complete, tested, and operational implementation of:
 - **Phase 1: Project Foundation** — Multi-tenant database architecture (PostgreSQL 18 with pgvector), composite foreign key referential integrity, FastAPI backend, and Next.js frontend foundation.
 - **Phase 2: Authentication & RBAC** — Multi-tenant organization bootstrap, secure registration, password hashing (bcrypt), JWT with cryptographic `jti` and revocation tracking, 7 distinct enterprise roles, double-submit cookie CSRF protection, sliding-window rate limiting, and strictly append-only audit logging.
 - **Phase 3: Brand Constitution Builder** — Full-stack Brand Rules engine with human approval gate, Fact Registry with conflict detection and automated expiration tracking, Term Bank with prohibited/preferred terms and case-sensitivity, Brand Asset Library with color swatches and file upload validation.
+- **Phase 4: Content Ingestion & Document Extraction** — High-performance ingestion for TXT, DOCX, multi-page PDF, and raster images (PNG, JPG), structured segmentation (paragraphs, headings, metadata), and graceful OCR fallback.
+- **Phase 5: Brand Analysis Engine** — Multi-category compliance engine across Terminology, Claims & Facts, Tone & Voice, Messaging Alignment, Visual Consistency (Pillow pixel analysis), and WCAG 2.1 Accessibility. Includes finding verification gate, duplicate suppression, and local Ollama support.
 
 ---
 

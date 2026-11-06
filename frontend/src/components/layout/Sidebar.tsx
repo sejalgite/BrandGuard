@@ -61,6 +61,7 @@ export const Sidebar: React.FC = () => {
       label: "Content Review",
       items: [
         { label: "Document Ingestion", href: "/documents", icon: UploadCloud, badge: "Active", requiredPermission: "upload_docs" },
+        { label: "Brand Analysis", href: "/analysis", icon: ShieldAlert, badge: "Active", requiredPermission: "run_analysis" },
         { label: "Review & Approvals", href: "#", icon: CheckCircle2, badge: "Phase 7", requiredPermission: "approve_docs" },
       ],
     },

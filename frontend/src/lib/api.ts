@@ -435,6 +435,7 @@ export interface DocumentVersionItem {
   extracted_text?: string;
   word_count: number;
   character_count: number;
+  brand_health_score?: number;
   version_status: string;
   is_locked: boolean;
   created_at: string;
@@ -545,4 +546,136 @@ export async function downloadDocumentFile(
   a.click();
   a.remove();
   window.URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Brand Analysis Engine API (Phase 5)
+// ---------------------------------------------------------------------------
+
+export interface AnalysisRunItem {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  version_id: string;
+  status: "RUNNING" | "COMPLETED" | "FAILED";
+  trigger_type: string;
+  total_findings: number;
+  categories_analyzed: string[];
+  execution_metadata: Record<string, any>;
+  started_at: string;
+  completed_at?: string;
+  error_message?: string;
+}
+
+export interface FindingItem {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  version_id: string;
+  job_id: string;
+  category: "TONE" | "TERMINOLOGY" | "MESSAGING" | "VISUAL" | "ACCESSIBILITY" | "CLAIMS";
+  severity: "INFO" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  confidence: number;
+  flagged_snippet: string;
+  char_offset_start?: number;
+  char_offset_end?: number;
+  explanation: string;
+  evidence_type: "RULE" | "FACT" | "TERM" | "ASSET";
+  cited_code: string;
+  rule_id?: string;
+  fact_id?: string;
+  term_id?: string;
+  asset_id?: string;
+  source: "DETERMINISTIC_ENGINE" | "LIVE_LLM";
+  status: "OPEN" | "ACCEPTED" | "EDITED" | "DISPUTED" | "DISMISSED" | "NEEDS_REVIEW";
+  segment_id?: string;
+  suggested_correction?: string;
+  created_at: string;
+  evidence_reference?: {
+    type?: string;
+    title?: string;
+    rule_code?: string;
+    category?: string;
+    statement?: string;
+    fact_code?: string;
+    source?: string;
+    expiry?: string;
+    prohibited?: string;
+    preferred?: string;
+    context?: string;
+    name?: string;
+    asset_code?: string;
+    specs?: Record<string, any>;
+  };
+}
+
+export interface DocumentAnalysisSummaryItem {
+  document_id: string;
+  latest_run?: AnalysisRunItem;
+  brand_health_score?: number;
+  findings_count_by_severity: Record<string, number>;
+  findings_count_by_category: Record<string, number>;
+  total_findings: number;
+}
+
+export async function startDocumentAnalysis(
+  document_id: string,
+  version_id?: string
+): Promise<AnalysisRunItem> {
+  const response = await apiClient.post<AnalysisRunItem>(
+    `/analysis/documents/${document_id}/run`,
+    { version_id }
+  );
+  return response.data;
+}
+
+export async function listDocumentAnalysisRuns(
+  document_id: string
+): Promise<AnalysisRunItem[]> {
+  const response = await apiClient.get<AnalysisRunItem[]>(
+    `/analysis/documents/${document_id}/runs`
+  );
+  return response.data;
+}
+
+export async function getAnalysisRun(job_id: string): Promise<AnalysisRunItem> {
+  const response = await apiClient.get<AnalysisRunItem>(`/analysis/runs/${job_id}`);
+  return response.data;
+}
+
+export async function getRunFindings(
+  job_id: string,
+  filters?: { category?: string; severity?: string; status?: string }
+): Promise<FindingItem[]> {
+  const response = await apiClient.get<FindingItem[]>(
+    `/analysis/runs/${job_id}/findings`,
+    { params: filters }
+  );
+  return response.data;
+}
+
+export async function getSingleFinding(finding_id: string): Promise<FindingItem> {
+  const response = await apiClient.get<FindingItem>(`/analysis/findings/${finding_id}`);
+  return response.data;
+}
+
+export async function updateFindingStatus(
+  finding_id: string,
+  status: string,
+  justification?: string
+): Promise<FindingItem> {
+  const response = await apiClient.patch<FindingItem>(
+    `/analysis/findings/${finding_id}/status`,
+    { status, justification }
+  );
+  return response.data;
+}
+
+export async function getDocumentAnalysisSummary(
+  document_id: string
+): Promise<DocumentAnalysisSummaryItem> {
+  const response = await apiClient.get<DocumentAnalysisSummaryItem>(
+    `/analysis/documents/${document_id}/summary`
+  );
+  return response.data;
 }
