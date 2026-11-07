@@ -60,6 +60,9 @@ temp/
 tmp/
 storage/
 backend/storage/
+storage_backups/
+**/storage_backups/
+*.tar.gz
 
 # OS and editor files
 .DS_Store

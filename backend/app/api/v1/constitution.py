@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
+from app.config import settings
 from app.models.constitution import (
     BrandConstitution, BrandRule, FactRegistry, TermBank, BrandAsset,
     RuleCategory, EntityStatus
@@ -55,9 +56,7 @@ from app.schemas.constitution import (
 
 router = APIRouter()
 
-STORAGE_BASE_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "storage", "assets")
-)
+STORAGE_BASE_DIR = os.path.abspath(settings.ASSETS_STORAGE_PATH)
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".svg"}
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
@@ -825,6 +824,12 @@ def get_asset_file(
     ).first()
     if not asset or not asset.file_path or not os.path.exists(asset.file_path):
         raise HTTPException(status_code=404, detail="Asset file not found.")
+
+    # Storage containment verification to prevent path traversal
+    expected_org_dir = os.path.abspath(os.path.join(STORAGE_BASE_DIR, str(current_user.organization_id)))
+    actual_file_dir = os.path.abspath(os.path.dirname(asset.file_path))
+    if not (actual_file_dir == expected_org_dir or actual_file_dir.startswith(expected_org_dir + os.sep)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
 
     return FileResponse(asset.file_path)
 

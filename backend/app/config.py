@@ -42,6 +42,24 @@ class Settings(BaseSettings):
         "documents"
     )
 
+    @property
+    def STORAGE_ROOT(self) -> str:
+        """The parent storage directory housing both documents and assets."""
+        # If STORAGE_PATH ends in documents, its parent is the unified storage root
+        if os.path.basename(os.path.normpath(self.STORAGE_PATH)) == "documents":
+            return os.path.dirname(os.path.normpath(self.STORAGE_PATH))
+        return os.path.normpath(self.STORAGE_PATH)
+
+    @property
+    def ASSETS_STORAGE_PATH(self) -> str:
+        """Dedicated persistent path for brand assets (logos, colors, visual tokens)."""
+        return os.path.join(self.STORAGE_ROOT, "assets")
+
+    @property
+    def DOCUMENTS_STORAGE_PATH(self) -> str:
+        """Dedicated persistent path for uploaded documents and version payloads."""
+        return os.path.join(self.STORAGE_ROOT, "documents")
+
     # API Documentation Visibility (disabled by default in production)
     DOCS_ENABLED: Optional[bool] = None
 

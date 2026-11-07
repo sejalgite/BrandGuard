@@ -471,7 +471,7 @@ def download_original_file(
     # Security check: ensure path is strictly inside tenant's storage folder
     expected_org_dir = os.path.abspath(os.path.join(STORAGE_BASE_DIR, str(current_user.organization_id)))
     actual_file_dir = os.path.abspath(os.path.dirname(version.file_path))
-    if not actual_file_dir.startswith(expected_org_dir):
+    if not (actual_file_dir == expected_org_dir or actual_file_dir.startswith(expected_org_dir + os.sep)):
         logger.error("Path traversal detected: %s vs %s", actual_file_dir, expected_org_dir)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
 
