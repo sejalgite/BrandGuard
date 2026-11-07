@@ -9,3 +9,13 @@ class HealthResponse(BaseModel):
     database: Dict[str, Any]
     ai_status: Dict[str, Any]
 
+
+class LivenessResponse(BaseModel):
+    status: str
+    timestamp: str
+
+
+class ReadinessResponse(BaseModel):
+    status: str
+    database: str
+    storage: str

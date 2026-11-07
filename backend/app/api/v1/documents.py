@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
 from app.database import get_db
+from app.config import settings
 from app.models.user import User
 from app.models.document import Document, DocumentVersion, DocumentLifecycleStatus, VersionWorkflowStatus
 from app.schemas.document import (
@@ -30,11 +31,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-STORAGE_BASE_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "storage",
-    "documents"
-)
+STORAGE_BASE_DIR = os.path.abspath(settings.STORAGE_PATH)
 
 
 def _safe_filename(filename: str) -> str:

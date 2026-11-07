@@ -48,6 +48,11 @@ logs/
 postgres_data/
 pgsql/
 pgsql/data/
+backups/
+**/backups/
+*.dump
+*.backup
+*.sql.gz
 
 # Uploads and temporary runtime files
 uploads/
