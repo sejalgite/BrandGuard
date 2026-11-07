@@ -112,11 +112,12 @@ export default function EvaluationDashboardPage() {
   };
 
   const latestRun = dashboardData?.latest_run;
-  const categories = latestRun?.category_metrics
+  const categories = (latestRun?.category_metrics
     ? Object.entries(latestRun.category_metrics)
     : dashboardData?.category_performance
     ? Object.entries(dashboardData.category_performance)
-    : [];
+    : []
+  ).filter(([cat]) => !cat.startsWith("_"));
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -187,7 +188,7 @@ export default function EvaluationDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Overall Precision</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Finding Precision</span>
             <Target className="h-4 w-4 text-indigo-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -195,12 +196,12 @@ export default function EvaluationDashboardPage() {
               {latestRun ? `${(latestRun.overall_precision * 100).toFixed(1)}%` : "0.0%"}
             </span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Accuracy of flagged snippets</p>
+          <p className="mt-1 text-xs text-slate-500">Micro-precision: TP / (TP + FP)</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Overall Recall</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Finding Recall</span>
             <Scale className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -208,12 +209,12 @@ export default function EvaluationDashboardPage() {
               {latestRun ? `${(latestRun.overall_recall * 100).toFixed(1)}%` : "0.0%"}
             </span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Ground-truth violation coverage</p>
+          <p className="mt-1 text-xs text-slate-500">Micro-recall: TP / (TP + FN)</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">F1-Score</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Finding F1-Score</span>
             <Sparkles className="h-4 w-4 text-purple-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -226,32 +227,58 @@ export default function EvaluationDashboardPage() {
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Quality Gate</span>
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Test-Case Pass Rate</span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-emerald-600">
-              {dashboardData ? `${(dashboardData.finding_quality_verification_rate * 100).toFixed(1)}%` : "100.0%"}
+              {latestRun
+                ? latestRun.test_case_pass_rate !== undefined
+                  ? `${(latestRun.test_case_pass_rate * 100).toFixed(1)}%`
+                  : `${(((latestRun.passed_cases || 0) / (latestRun.total_cases || 1)) * 100).toFixed(1)}%`
+                : "0.0%"}
             </span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">No citation, no flag enforcement</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {latestRun ? `${latestRun.passed_cases ?? 0}/${latestRun.total_cases ?? 0} cases (0 FP & 0 FN)` : "0/0 cases passed"}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Test Cases</span>
-            <Info className="h-4 w-4 text-slate-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Document Accuracy</span>
+            <ShieldCheck className="h-4 w-4 text-slate-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-slate-900">
-              {latestRun ? `${latestRun.passed_cases}/${latestRun.total_cases}` : "0/0"}
+              {latestRun ? `${((latestRun.document_accuracy ?? latestRun.overall_accuracy) * 100).toFixed(1)}%` : "0.0%"}
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            {latestRun ? `${(latestRun.overall_accuracy * 100).toFixed(1)}% Accuracy` : "Benchmark suite"}
+            (TP_doc + TN_doc) / Total docs
           </p>
         </div>
       </div>
+
+      {/* Summary Averages Banner */}
+      {latestRun && (latestRun.macro_precision !== undefined || latestRun.macro_recall !== undefined) && (
+        <div className="bg-slate-50 rounded-lg p-3.5 border border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+          <div className="flex items-center gap-4">
+            <span className="font-semibold text-slate-800">Macro Averages (Unweighted):</span>
+            <span>Precision: <strong className="text-slate-900">{((latestRun.macro_precision ?? 0) * 100).toFixed(1)}%</strong></span>
+            <span>Recall: <strong className="text-slate-900">{((latestRun.macro_recall ?? 0) * 100).toFixed(1)}%</strong></span>
+            <span>F1: <strong className="text-slate-900">{((latestRun.macro_f1 ?? 0) * 100).toFixed(1)}%</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500">Quality Verification Gate:</span>
+            <span className="font-semibold text-emerald-600">
+              {dashboardData?.finding_quality_verification_rate !== undefined
+                ? `${(dashboardData.finding_quality_verification_rate * 100).toFixed(1)}%`
+                : "100.0%"}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="border-b border-slate-200">
@@ -606,3 +633,4 @@ export default function EvaluationDashboardPage() {
     </div>
   );
 }
+

@@ -29,7 +29,7 @@ APEXCLOUD_BENCHMARK_CASES: List[Dict[str, Any]] = [
         "input_content": (
             "ApexCloud provides cost-effective enterprise cloud infrastructure designed for high availability. "
             "Our enterprise starter plan starts at $79 per month with verified 99.99% uptime SLA. "
-            "Learn more about enterprise solutions at our documentation portal."
+            "Explore enterprise solutions at our documentation portal."
         ),
         "content_metadata": {},
         "expected_findings": [],

@@ -447,3 +447,109 @@ def test_quality_dashboard_aggregation_endpoint():
     assert "category_scores" in dash
 
     db.close()
+
+
+def test_precision_recall_f1_mathematical_definitions():
+    """Verify precision, recall, and F1 calculations match exact mathematical definitions."""
+    # TP=10, FP=1, FN=0 -> Precision=10/11 (90.91%), Recall=10/10 (100%), F1=20/21 (95.24%)
+    p, r, f1 = EvaluationMetricsCalculator.calculate_p_r_f1(tp=10, fp=1, fn=0)
+    assert p == 0.9091
+    assert r == 1.0
+    assert f1 == 0.9524
+
+    # TP=8, FP=2, FN=1 -> Precision=8/10 (80%), Recall=8/9 (88.89%), F1=(2*0.8*8/9)/(0.8+8/9)
+    p2, r2, f12 = EvaluationMetricsCalculator.calculate_p_r_f1(tp=8, fp=2, fn=1)
+    assert p2 == 0.8
+    assert r2 == 0.8889
+    assert f12 == round((2 * 0.8 * (8/9)) / (0.8 + (8/9)), 4)
+
+
+def test_accuracy_and_true_negative_handling():
+    """Verify document-level accuracy correctly accounts for True Negatives (clean documents)."""
+    # 10 violation documents correctly flagged (TP_doc=10), 2 clean docs correctly clean (TN_doc=2), 0 errors
+    acc_perfect = EvaluationMetricsCalculator.calculate_document_accuracy(tp_doc=10, tn_doc=2, fp_doc=0, fn_doc=0)
+    assert acc_perfect == 1.0
+
+    # 1 clean document falsely flagged (FP_doc=1)
+    acc_one_fp = EvaluationMetricsCalculator.calculate_document_accuracy(tp_doc=10, tn_doc=1, fp_doc=1, fn_doc=0)
+    assert acc_one_fp == round(11 / 12, 4)
+
+    # Empty document collection
+    acc_empty = EvaluationMetricsCalculator.calculate_document_accuracy(tp_doc=0, tn_doc=0, fp_doc=0, fn_doc=0)
+    assert acc_empty == 1.0
+
+
+def test_test_case_pass_rate_calculation():
+    """Verify test-case pass rate distinguishes between pass rate and precision."""
+    # 10 passed out of 12 test cases -> 83.33%
+    pass_rate_10 = EvaluationMetricsCalculator.calculate_test_case_pass_rate(passed_cases=10, total_cases=12)
+    assert pass_rate_10 == 0.8333
+
+    # 11 passed out of 12 test cases -> 91.67%
+    pass_rate_11 = EvaluationMetricsCalculator.calculate_test_case_pass_rate(passed_cases=11, total_cases=12)
+    assert pass_rate_11 == 0.9167
+
+    # 0 test cases -> 1.0
+    pass_rate_empty = EvaluationMetricsCalculator.calculate_test_case_pass_rate(passed_cases=0, total_cases=0)
+    assert pass_rate_empty == 1.0
+
+
+def test_micro_and_macro_averaging_mathematics():
+    """Verify micro vs macro averaging calculations across multiple categories."""
+    cat_metrics = {
+        "TONE": {"tp": 3, "fp": 0, "fn": 0, "expected": 3, "predicted": 3, "precision": 1.0, "recall": 1.0, "f1": 1.0},
+        "CLAIMS": {"tp": 2, "fp": 0, "fn": 0, "expected": 2, "predicted": 2, "precision": 1.0, "recall": 1.0, "f1": 1.0},
+        "MESSAGING": {"tp": 1, "fp": 1, "fn": 0, "expected": 1, "predicted": 2, "precision": 0.5, "recall": 1.0, "f1": 0.6667},
+        "ACCESSIBILITY": {"tp": 0, "fp": 0, "fn": 0, "expected": 0, "predicted": 0, "precision": 1.0, "recall": 1.0, "f1": 1.0},
+    }
+
+    # Macro averages (average over evaluated categories TONE, CLAIMS, MESSAGING)
+    macro_p, macro_r, macro_f1 = EvaluationMetricsCalculator.calculate_macro_averages(cat_metrics)
+    expected_macro_p = round((1.0 + 1.0 + 0.5) / 3, 4)  # 2.5 / 3 = 0.8333
+    expected_macro_r = round((1.0 + 1.0 + 1.0) / 3, 4)  # 1.0
+    expected_macro_f1 = round((1.0 + 1.0 + 0.6667) / 3, 4)  # 2.6667 / 3 = 0.8889
+
+    assert macro_p == expected_macro_p
+    assert macro_r == expected_macro_r
+    assert macro_f1 == expected_macro_f1
+
+    # Micro averages (aggregated TP, FP, FN: TP=6, FP=1, FN=0 -> 6/7 = 0.8571)
+    micro_p, micro_r, micro_f1 = EvaluationMetricsCalculator.calculate_p_r_f1(tp=6, fp=1, fn=0)
+    assert micro_p == 0.8571
+    assert micro_r == 1.0
+    assert micro_f1 == round((2 * (6/7) * 1.0) / ((6/7) + 1.0), 4)
+
+    # Micro differs from macro when category sample sizes differ
+    assert micro_p != macro_p
+
+
+def test_category_specific_finding_attribution():
+    """Verify that findings are attributed to their actual category, ensuring sum(cat_counts) == total."""
+    db = SessionLocal()
+    t = setup_eval_tenant(db, "CatAttrib")
+
+    # Seed benchmark dataset
+    ds = EvaluationDatasetGenerator.seed_apexcloud_benchmark(db, t["org_id"])
+    run = BenchmarkEvaluator.run_evaluation(db, t["org_id"], ds.id)
+
+    # Sum of category metrics must equal totals
+    summary = run.category_metrics.get("_summary", {})
+    total_tp = summary.get("total_tp", 0)
+    total_fp = summary.get("total_fp", 0)
+    total_fn = summary.get("total_fn", 0)
+
+    cat_tp_sum = sum(m["tp"] for k, m in run.category_metrics.items() if not k.startswith("_"))
+    cat_fp_sum = sum(m["fp"] for k, m in run.category_metrics.items() if not k.startswith("_"))
+    cat_fn_sum = sum(m["fn"] for k, m in run.category_metrics.items() if not k.startswith("_"))
+
+    assert cat_tp_sum == total_tp
+    assert cat_fp_sum == total_fp
+    assert cat_fn_sum == total_fn
+
+    # Micro precision calculated from total matches overall_precision
+    exp_p, exp_r, exp_f1 = EvaluationMetricsCalculator.calculate_p_r_f1(total_tp, total_fp, total_fn)
+    assert run.overall_precision == exp_p
+    assert run.overall_recall == exp_r
+    assert run.overall_f1 == exp_f1
+
+    db.close()

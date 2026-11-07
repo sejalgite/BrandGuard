@@ -77,12 +77,30 @@ def run_demo():
             run_type="BENCHMARK"
         )
 
-        print(f"    Evaluation Run ID : {eval_run.id}")
-        print(f"    Engine Version    : {eval_run.engine_version}")
-        print(f"    Overall Precision : {eval_run.overall_precision * 100:.1f}%")
-        print(f"    Overall Recall    : {eval_run.overall_recall * 100:.1f}%")
-        print(f"    Overall F1-Score  : {eval_run.overall_f1 * 100:.1f}%")
-        print(f"    Overall Accuracy  : {eval_run.overall_accuracy * 100:.1f}%")
+        summary = (eval_run.category_metrics or {}).get("_summary", {})
+        macro_p = summary.get("macro_precision", 0.0)
+        macro_r = summary.get("macro_recall", 0.0)
+        macro_f1 = summary.get("macro_f1", 0.0)
+        pass_rate = summary.get("test_case_pass_rate", 0.0)
+        passed_cases = summary.get("passed_cases", 0)
+        total_cases = summary.get("total_cases", len(test_cases))
+        doc_acc = summary.get("document_accuracy", eval_run.overall_accuracy)
+        total_tp = summary.get("total_tp", 0)
+        total_fp = summary.get("total_fp", 0)
+        total_fn = summary.get("total_fn", 0)
+
+        print(f"    Evaluation Run ID           : {eval_run.id}")
+        print(f"    Engine Version              : {eval_run.engine_version}")
+        print(f"    Total Test Documents        : {total_cases}")
+        print(f"    Finding-Level Counts        : TP = {total_tp}, FP = {total_fp}, FN = {total_fn}")
+        print(f"    Finding Precision (Micro)   : {eval_run.overall_precision * 100:.1f}%  (TP / [TP + FP])")
+        print(f"    Finding Recall (Micro)      : {eval_run.overall_recall * 100:.1f}% (TP / [TP + FN])")
+        print(f"    Finding F1-Score (Micro)    : {eval_run.overall_f1 * 100:.1f}%")
+        print(f"    Category Macro Precision    : {macro_p * 100:.1f}%")
+        print(f"    Category Macro Recall       : {macro_r * 100:.1f}%")
+        print(f"    Category Macro F1-Score     : {macro_f1 * 100:.1f}%")
+        print(f"    Test-Case Pass Rate         : {pass_rate * 100:.1f}% ({passed_cases}/{total_cases} cases with 0 FP and 0 FN)")
+        print(f"    Document-Level Accuracy     : {doc_acc * 100:.1f}% (explicitly accounting for True Negatives)")
 
         # 4. Category-Wise Performance Matrix
         print("\n[*] Step 4: Category-Wise Precision, Recall, F1 & Coverage Breakdown:")
@@ -90,6 +108,8 @@ def run_demo():
         print(f"    {'Category':<16} | {'TP':<4} | {'FP':<4} | {'FN':<4} | {'Precision':<10} | {'Recall':<10} | {'F1-Score':<10} | {'Coverage':<8}")
         print(f"    {'-'*88}")
         for cat, m in eval_run.category_metrics.items():
+            if cat.startswith("_"):
+                continue
             print(f"    {cat:<16} | {m['tp']:<4} | {m['fp']:<4} | {m['fn']:<4} | {m['precision']*100:>8.1f}% | {m['recall']*100:>8.1f}% | {m['f1']*100:>8.1f}% | {m['coverage']*100:>6.1f}%")
         print(f"    {'-'*88}")
 
@@ -129,3 +149,4 @@ def run_demo():
 
 if __name__ == "__main__":
     run_demo()
+

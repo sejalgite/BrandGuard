@@ -999,17 +999,26 @@ export interface CategoryMetricDetailItem {
 export interface EvaluationRunItem {
   id: string;
   dataset_id: string;
+  dataset_name?: string;
   run_type: string;
   engine_version: string;
   overall_precision: number;
   overall_recall: number;
   overall_f1: number;
   overall_accuracy: number;
+  test_case_pass_rate?: number;
+  document_accuracy?: number;
+  macro_precision?: number;
+  macro_recall?: number;
+  macro_f1?: number;
+  total_tp?: number;
+  total_fp?: number;
+  total_fn?: number;
   category_metrics: Record<string, CategoryMetricDetailItem>;
   total_cases: number;
-  passed_cases: number;
-  failed_cases: number;
-  execution_time_seconds: number;
+  passed_cases?: number;
+  failed_cases?: number;
+  execution_time_seconds?: number;
   created_at: string;
   case_results?: Array<Record<string, unknown>>;
 }
@@ -1017,12 +1026,26 @@ export interface EvaluationRunItem {
 export interface QualityDashboardData {
   latest_run?: EvaluationRunItem;
   total_datasets: number;
-  total_test_cases: number;
-  benchmark_f1_score: number;
-  finding_quality_verification_rate: number;
-  category_performance: Record<string, CategoryMetricDetailItem>;
-  historical_runs: EvaluationRunItem[];
-  active_recommendations_count: number;
+  total_test_cases?: number;
+  total_benchmark_cases?: number;
+  overall_precision?: number;
+  overall_recall?: number;
+  overall_f1?: number;
+  overall_accuracy?: number;
+  test_case_pass_rate?: number;
+  document_accuracy?: number;
+  macro_precision?: number;
+  macro_recall?: number;
+  macro_f1?: number;
+  benchmark_f1_score?: number;
+  finding_quality_verification_rate?: number;
+  overall_verification_rate?: number;
+  category_performance?: Record<string, CategoryMetricDetailItem>;
+  category_scores?: Record<string, Record<string, number>>;
+  historical_runs?: EvaluationRunItem[];
+  historical_runs_count?: number;
+  active_recommendations_count?: number;
+  recommendations_count?: number;
 }
 
 export interface RulePerformanceItem {

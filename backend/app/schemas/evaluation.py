@@ -88,6 +88,15 @@ class EvaluationRunResponse(BaseModel):
     overall_recall: float
     overall_f1: float
     overall_accuracy: float
+    test_case_pass_rate: Optional[float] = None
+    document_accuracy: Optional[float] = None
+    macro_precision: Optional[float] = None
+    macro_recall: Optional[float] = None
+    macro_f1: Optional[float] = None
+    total_tp: Optional[int] = None
+    total_fp: Optional[int] = None
+    total_fn: Optional[int] = None
+    passed_cases: Optional[int] = None
     category_metrics: Dict[str, CategoryMetricDetail]
     case_results: List[TestCaseResultItem] = []
     triggered_by: Optional[uuid.UUID] = None
@@ -131,8 +140,14 @@ class QualityDashboardSummary(BaseModel):
     overall_recall: float
     overall_f1: float
     overall_accuracy: float
+    test_case_pass_rate: Optional[float] = None
+    document_accuracy: Optional[float] = None
+    macro_precision: Optional[float] = None
+    macro_recall: Optional[float] = None
+    macro_f1: Optional[float] = None
     overall_verification_rate: float
     category_scores: Dict[str, Dict[str, float]]
     historical_runs_count: int
     top_disputed_rules: List[RulePerformanceStat] = []
     recommendations_count: int
+

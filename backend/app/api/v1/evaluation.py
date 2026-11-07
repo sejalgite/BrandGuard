@@ -259,6 +259,8 @@ def get_quality_dashboard(
         RulePerformanceStat(**r) for r in disputed_rules_data[:5]
     ]
 
+    summary = (latest_run.category_metrics or {}).get("_summary", {}) if latest_run else {}
+
     return QualityDashboardSummary(
         latest_run=latest_resp,
         total_datasets=total_datasets,
@@ -267,6 +269,11 @@ def get_quality_dashboard(
         overall_recall=latest_run.overall_recall if latest_run else 0.0,
         overall_f1=latest_run.overall_f1 if latest_run else 0.0,
         overall_accuracy=latest_run.overall_accuracy if latest_run else 0.0,
+        test_case_pass_rate=summary.get("test_case_pass_rate"),
+        document_accuracy=summary.get("document_accuracy") or (latest_run.overall_accuracy if latest_run else 0.0),
+        macro_precision=summary.get("macro_precision"),
+        macro_recall=summary.get("macro_recall"),
+        macro_f1=summary.get("macro_f1"),
         overall_verification_rate=1.0,
         category_scores=category_scores,
         historical_runs_count=historical_runs_count,
@@ -299,6 +306,10 @@ def get_guideline_recommendations(
 # --- Helper ---
 
 def _build_eval_run_response(eval_run: EvaluationRun, dataset_name: Optional[str]) -> EvaluationRunResponse:
+    raw_cat_metrics = eval_run.category_metrics or {}
+    summary = raw_cat_metrics.get("_summary", {})
+    clean_cat_metrics = {k: v for k, v in raw_cat_metrics.items() if not k.startswith("_")}
+
     return EvaluationRunResponse(
         id=eval_run.id,
         organization_id=eval_run.organization_id,
@@ -311,8 +322,18 @@ def _build_eval_run_response(eval_run: EvaluationRun, dataset_name: Optional[str
         overall_recall=eval_run.overall_recall,
         overall_f1=eval_run.overall_f1,
         overall_accuracy=eval_run.overall_accuracy,
-        category_metrics=eval_run.category_metrics,
+        test_case_pass_rate=summary.get("test_case_pass_rate"),
+        document_accuracy=summary.get("document_accuracy") or eval_run.overall_accuracy,
+        macro_precision=summary.get("macro_precision"),
+        macro_recall=summary.get("macro_recall"),
+        macro_f1=summary.get("macro_f1"),
+        total_tp=summary.get("total_tp"),
+        total_fp=summary.get("total_fp"),
+        total_fn=summary.get("total_fn"),
+        passed_cases=summary.get("passed_cases"),
+        category_metrics=clean_cat_metrics,
         case_results=eval_run.case_results,
         triggered_by=eval_run.triggered_by,
         created_at=eval_run.created_at
     )
+
